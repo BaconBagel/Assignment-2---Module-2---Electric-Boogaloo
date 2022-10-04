@@ -11,7 +11,7 @@ with open("one_customer.csv", 'r') as file:
 def GetSequences(guesses_in): # This function fetches all guesses, the last x guesses are then matched and the next item is added to an index in a new list
     list_length = len(guesses_in)
     next_guesses = []
-    time_lag = range(0, 10) #modify this to be a function input later
+    time_lag = range(0, 5) #modify this to be a function input later
     for lag in time_lag:
         sequence_length = 0
         while list_length > lag:
@@ -174,7 +174,7 @@ for row in rows:
             learned = learn()
 
             simul_right = 1
-            simul_wrong = 1
+            simul_wrong = 0
             for h in range(1, len(tester) - 1):
                 predicted_number = Get_Probabilities(tester[0:h], learned[0], learned[1], learned[2], learned[3])
                 if predicted_number is not None:  # Checks if simulation predicted the next value
@@ -183,4 +183,4 @@ for row in rows:
                     else:
                         simul_wrong += 1
                 correct_ratio = simul_right / (simul_wrong + simul_right)
-            print(correct_ratio, "% guessed correctly for week 70-89")
+            print(correct_ratio*100, "% guessed correctly for week 70-89")
