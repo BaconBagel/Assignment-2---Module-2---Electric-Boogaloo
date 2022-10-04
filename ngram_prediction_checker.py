@@ -147,13 +147,13 @@ def learn():
         if weight_number > 3:
             weight_number = 0
 
-        print("current correct guesses in testing (overfitted):", str(correct_ratio), last_prob, "weights: ",
+        print("current correct guesses in training (overfitted):", str(correct_ratio), last_prob, "weights: ",
               str(weight_frequency), weight_lag, weight_length, weight_recency)
     return weight_length, weight_lag, weight_frequency, weight_recency
 
 for row in rows:
     if len(row) > 1:
-        print(row)
+        print("Product number: ", row[0])
         guesses, live_list = [], [],
         probability_list = []
         training_data = row[1:70]
