@@ -1,5 +1,6 @@
 import csv
 import math
+import cmath
 
 
 def GetSequences(guesses_in): # This function fetches all guesses, the last x guesses are then matched and the next item is added to an index in a new list
@@ -32,6 +33,18 @@ def division_by_zero(n, d):
     return n / d if d else 0
 
 
+def log_loss(predicted, actual):
+    p = int(predicted)
+    y = int(actual) - 1
+    if p == 1:
+        p = p - 0.02
+    if p == 0:
+        p = p + 0.02
+
+    loss_calc = (y*(math.log(p))) + (1-y) * math.log(1-p)
+    return loss_calc
+
+
 def Get_Probabilities(input_list, weight_length, weight_lag, weight_frequency,
                       weight_recency, weights_ngram, meta_weight):
     guesses_in = input_list
@@ -51,11 +64,14 @@ def Get_Probabilities(input_list, weight_length, weight_lag, weight_frequency,
             next_number = int(sub_list[-3])
             frequency_bias = int(guesses_in.count(str(next_number))) * weight_frequency
             recencey_bias = int(sub_list[-2]) * weight_recency
-            result_matches = ((frequency_bias) + (recencey_bias) + (lag_weight) + (length_multiplier)) \
-                             * (weights_ngram[-sub_list[-2]-1])
+            f1 = ((frequency_bias) * (recencey_bias) * (lag_weight) * (length_multiplier)) \
+                             * ((weights_ngram[-sub_list[-2]-1])**2)
+            f2 = ((frequency_bias) * (recencey_bias) / ((lag_weight) + (length_multiplier))) \
+                             * ((weights_ngram[-sub_list[-2]-1]))**0.3
+
             if probability_list[next_number-1] == 2:
-                result_matches = result_matches * meta_weight
-            probability_list[next_number-1].append(result_matches)
+                f1 = f1 * meta_weight
+            probability_list[next_number-1].append(f1)
             counter += 1
     prob_outcomes = []
     countr = 0
@@ -67,7 +83,7 @@ def Get_Probabilities(input_list, weight_length, weight_lag, weight_frequency,
 
         idx, max_value = max(prob_outcomes, key=lambda item: item[-1])
         idx2, min_value = min(prob_outcomes, key=lambda item: item[-1])
-        return int(idx)
+        return abs(int(math.log(idx2)/(0.05+(math.log(idx2)+math.log(idx)))))
 
 
 def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, threshold_accuracy):
@@ -85,17 +101,18 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
     counts = 0
     break_count = 0
     no_improvement_limit = 500
-    iteration_limit = 5000
+    iteration_limit = 500
     weight_limit = 1400
     while abs(weight_length) + abs(weight_lag) + abs(weight_frequency) + abs(weight_recency) + abs(meta_w) \
             < weight_limit \
             and counts < iteration_limit\
             and break_count < no_improvement_limit\
-            and correct_ratio <= 0.95:
+            and correct_ratio > threshold_accuracy:
         auto_count = 0
         switch = 0
         last_prob = 0
         weight_adder = 0
+        loss_list = []
         weight_list = [weight_length, weight_lag, weight_frequency, weight_recency, meta_w]
         while 0 <= auto_count <= swing_limit:
             counts += 1
@@ -123,29 +140,28 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
                     predicted_number = Get_Probabilities(sequence[0:n], weight_length, weight_lag, weight_frequency,
                                                          weight + weight_adder, purchase_weights, meta_w + weight_adder)
                 if predicted_number is not None:  # Checks if simulation predicted the next value
+                    loss_list.append(log_loss(predicted_number, sequence[n+1]))
                     if int(predicted_number) == int(sequence[n+1]):
-                        simul_right += 1
                         purchase_weights[cnt_loop] = abs(purchase_weights[cnt_loop]) * 0.99
                     else:
-                        simul_wrong += 1
                         purchase_weights[cnt_loop] = abs(purchase_weights[cnt_loop]) * 1.01
-                correct_ratio = simul_right / (simul_wrong + simul_right)
+                    correct_ratio = sum(loss_list)/len(loss_list)
                 accuracy_list.append(correct_ratio)
                 cnt_loop += 1
             learned_list.append([correct_ratio, weight])
 
-            if max(accuracy_list) < correct_ratio:
+            if max(accuracy_list) > correct_ratio:
                 break_count = 0
             else:
                 break_count += 1
 
-            if last_prob < correct_ratio:
+            if last_prob > correct_ratio:
                 last_prob = float(learned_list[-1][0])
                 auto_count = 1
                 odds_improved = 1
-            elif correct_ratio < last_prob:
+            elif correct_ratio > last_prob:
                 switch += 1
-                step_size = -1*step_size
+                step_size = -1.1*step_size
                 if switch > 1:
                     switch = 0
                     auto_count = -1
@@ -165,8 +181,6 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
                     meta_w = weight + weight_adder
                 weight_list = [weight_length, weight_lag, weight_frequency, weight_recency, meta_w]
 
-            # print(learned_list[-1], last_prob, weight_numberweight)
-
             #  find a cleaner solution to the below
         weight_number += 1
         if auto_count > swing_limit:
@@ -184,31 +198,33 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
 total_right, total_wrong = 1, 1
 one_count, two_count = 0, 0
 training_lim = 40
-testing_lim = 80
+testing_lim = 88
 dyn_length, dyn_frq, dyn_lag, dyn_recency, dyn_meta = 1, 1, 0.1, 1, 1
 total_wrong = 0
 total_right = 1
+losses_testing = []
 rows = []
-with open("customers_long.csv", 'r') as file:
+with open("big_list.csv", 'r') as file:
     csvreader = csv.reader(file)
     header = next(csvreader)
     for row in csvreader:
         rows.append(row)
 for row in rows:
-    row = row[1:]
-    if len(row) > 1:
-        print("Product number: ", row[0])
+    if len(row) > 1 and row[2]:
+        print("Customer: ", row[0], "Product number: ", row[1])
+        row = row[2:]
+        print(row)
         guesses, live_list = [], [],
         probability_list = []
+        losses_product = []
         training_data = row[0:training_lim]
         testing_data = row[training_lim:testing_lim]
-        if 0.5 > (row.count("1") / (row.count("2") + row.count("1"))) > 0.4:
+        if (row.count("1") / (row.count("2") + row.count("1"))) > 0.8:
             print("Proportion of purchases in training data:",
                   training_data.count("1") / (training_data.count("2") + training_data.count("1")))
             print("Proportion of purchases in testing data:",
                   testing_data.count("1") / (testing_data.count("2") + testing_data.count("1")))
             tester = []
-            import time
             for num in training_data:
                 num = int(num)
                 guesses.extend(str(num))
@@ -216,8 +232,8 @@ for row in rows:
                 num = int(num)
                 tester.extend(str(num))
                 guesses.extend(str(num))
-            threshold_accuracy = max(guesses.count("1")/(guesses.count("1")+guesses.count("2")),
-                                      (guesses.count("2")/(guesses.count("1")+guesses.count("2"))))
+            threshold_accuracy = 1.1-(max(guesses.count("1")/(guesses.count("1")+guesses.count("2")),
+                                      (guesses.count("2")/(guesses.count("1")+guesses.count("2")))))
 
             correct_guesses, incorrect_guesses, newcount = 0, 0, 0
             simul_right = 0.001
@@ -230,20 +246,16 @@ for row in rows:
                                                                       learned[3], learned[5]
 
                 if predicted_number is not None:  # Checks if simulation predicted the next value
-                    if int(predicted_number) == int(guesses[h + 1]):
-                        simul_right += 1
-                        total_right += 1
-                    else:
-                        simul_wrong += 1
-                        total_wrong += 1
+                    testing_loss = log_loss(predicted_number, guesses[h+1])
+                    losses_testing.append(testing_loss)
+                    losses_product.append(testing_loss)
                     if int(guesses[h + 1]) == 1:
                         one_count += 1
                     else:
                         two_count += 1
-                print(h, predicted_number, guesses[h+1])
-                correct_ratio = simul_right / (simul_wrong + simul_right)
-                total_correct_ratio = total_right / (total_wrong + total_right)
-            print(correct_ratio * 100, "% guessed correctly for week 70-89")
-            print(total_correct_ratio * 100, "% guessed correctly for ", total_wrong+total_right,
+                loss_product = sum(losses_product)/len(losses_product)
+                loss_testing = sum(losses_testing)/len(losses_testing)
+            print(loss_product, "log_loss for weeks: ", training_lim, " to ", testing_lim)
+            print(loss_testing, "log_loss correctly for ", one_count+two_count,
                   " predictions in testing so far, baseline ratio:", one_count/(one_count+two_count))
 
