@@ -96,18 +96,19 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
     accuracy_list = []
     correct_ratio = 0
     weight_number = 0
-    step_size = 1
-    swing_limit = 10
+    step_size = 0.1
+    swing_limit = 2
     counts = 0
     break_count = 0
-    no_improvement_limit = 500
-    iteration_limit = 500
+    no_improvement_limit = 5000
+    iteration_limit = 5000
     weight_limit = 1400
+    no_improvement_limit = (no_improvement_limit * threshold_accuracy) + 20
     while abs(weight_length) + abs(weight_lag) + abs(weight_frequency) + abs(weight_recency) + abs(meta_w) \
             < weight_limit \
             and counts < iteration_limit\
             and break_count < no_improvement_limit\
-            and correct_ratio > threshold_accuracy:
+            and correct_ratio >= threshold_accuracy:
         auto_count = 0
         switch = 0
         last_prob = 0
@@ -204,22 +205,22 @@ total_wrong = 0
 total_right = 1
 losses_testing = []
 rows = []
-with open("big_list.csv", 'r') as file:
+with open("bigger_list.csv", 'r') as file:
     csvreader = csv.reader(file)
     header = next(csvreader)
     for row in csvreader:
         rows.append(row)
+total_thresholds = []
 for row in rows:
     if len(row) > 1 and row[2]:
         print("Customer: ", row[0], "Product number: ", row[1])
         row = row[2:]
-        print(row)
         guesses, live_list = [], [],
         probability_list = []
         losses_product = []
         training_data = row[0:training_lim]
         testing_data = row[training_lim:testing_lim]
-        if (row.count("1") / (row.count("2") + row.count("1"))) > 0.8:
+        if (row.count("2") / (row.count("2") + row.count("1"))) > -1:
             print("Proportion of purchases in training data:",
                   training_data.count("1") / (training_data.count("2") + training_data.count("1")))
             print("Proportion of purchases in testing data:",
@@ -232,8 +233,10 @@ for row in rows:
                 num = int(num)
                 tester.extend(str(num))
                 guesses.extend(str(num))
-            threshold_accuracy = 1.1-(max(guesses.count("1")/(guesses.count("1")+guesses.count("2")),
-                                      (guesses.count("2")/(guesses.count("1")+guesses.count("2")))))
+
+            threshold_accuracy = log_loss(max(guesses.count("1")/(guesses.count("1") + guesses.count("2")),
+                                               guesses.count("2")/(guesses.count("1") + guesses.count("2"))), 1)
+            total_thresholds.append(threshold_accuracy)
 
             correct_guesses, incorrect_guesses, newcount = 0, 0, 0
             simul_right = 0.001
@@ -257,5 +260,5 @@ for row in rows:
                 loss_testing = sum(losses_testing)/len(losses_testing)
             print(loss_product, "log_loss for weeks: ", training_lim, " to ", testing_lim)
             print(loss_testing, "log_loss correctly for ", one_count+two_count,
-                  " predictions in testing so far, baseline ratio:", one_count/(one_count+two_count))
+                  " predictions in testing so far, baseline ratio:", loss_testing)
 
