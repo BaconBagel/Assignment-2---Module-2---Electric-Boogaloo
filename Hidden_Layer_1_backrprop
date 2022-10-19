@@ -171,7 +171,7 @@ def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
             for y in weights_secondlayer:
                 counts += 1
                 if counts == 1:
-                    percept_1 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5])
+                    percept_1 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5]) #these are collapsable with the previus layer!
                 if counts == 2:
                     percept_2 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5])
                 if counts == 3:
