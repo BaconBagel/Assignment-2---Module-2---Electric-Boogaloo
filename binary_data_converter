@@ -1,0 +1,63 @@
+
+import pandas as pd
+import time
+from collections import Counter
+import csv
+
+
+
+df = pd.read_parquet("baskets-s.parquet")
+print(df)
+features = [
+  "week",
+    "customer",
+    "product",
+    "price",
+]
+all_customers = []
+
+target_names = df["product"].unique()
+all_items = list(target_names)
+print(all_items)
+print(target_names)
+X = df[features].values
+y = df["product"].values
+
+custom_list = df.values.tolist()
+
+for customer in range(200):
+    output_list = []
+    for week in range(89):
+        output_list.append([customer,week])
+        for item in custom_list:
+            if item[0] == week and item[1] == customer:
+                output_list[week].append(item[2])
+                print(output_list)
+
+    all_customers.append(output_list)
+
+custom_product_bin = []
+
+for customer in range(198):
+        for y in range(249):
+            sequence = []
+            for week in range(88):
+                for entry in all_customers[customer][week]:
+                    print(entry,y)
+                    if entry == y:
+                        found = True
+                    else:
+                        found = False
+                if found is True:
+                    sequence.append("2")
+                else:
+                    sequence.append("1")
+            list_add = [customer, y]
+            for it in sequence:
+                list_add.append(it)
+            with open('bigger_list.csv', 'a') as file:
+                writer = csv.writer(file)
+                writer.writerow(list_add)
+                file.close()
+            print(custom_product_bin)
+
