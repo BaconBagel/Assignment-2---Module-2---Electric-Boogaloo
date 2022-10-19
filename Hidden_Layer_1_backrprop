@@ -160,12 +160,12 @@ def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
                 if len(h) > 1:
                     prob_outcomes3.append([countr+1,sum(h[1:])])
             if len(prob_outcomes) > 1:
-                out1 = abs(prob_outcomes[0][-1]) + 0.01
-                out2 = abs(prob_outcomes[1][-1]) + 0.01
-                out3 = abs(prob_outcomes2[0][-1]) + 0.01
-                out4 = abs(prob_outcomes2[1][-1]) + 0.01
-                out5 = abs(prob_outcomes3[0][-1])+ 0.01
-                out6 = abs(prob_outcomes3[1][-1]) + 0.01
+                out1 = abs(prob_outcomes[0][-1])
+                out2 = abs(prob_outcomes[1][-1])
+                out3 = abs(prob_outcomes2[0][-1])
+                out4 = abs(prob_outcomes2[1][-1])
+                out5 = abs(prob_outcomes3[0][-1])
+                out6 = abs(prob_outcomes3[1][-1])
             counts = 0
             weights_secondlayer = weightlist[3:]
             for y in weights_secondlayer:
@@ -216,7 +216,7 @@ def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
                 required_change1 = percept_1 - 0.5
                 required_change2 = percept_2 - 0.5
                 required_change3 = percept_3 - 0.5
-
+        print(percept_1, percept_2, percept_3)
 
             #print(percept_1,percept_2,percept_3)
         return prediction, [required_change1, required_change2, required_change3], back_prop
@@ -279,6 +279,10 @@ def learn(sequence, theshold_accuracy):
                 if predicted_number is not None:  # Checks if simulation predicted the next value
                     loss_list.append(log_loss(predicted_number, sequence[n+1]))
                     correct_ratio = sum(loss_list) / len(loss_list)
+                print(rate_changes)
+                print((rate_changes[0][0]/sum(rate_changes[0])))
+                print(deltas1, deltas2, deltas3)
+                time.sleep(500)
             accuracy_list.append(correct_ratio)
 
 
@@ -287,9 +291,9 @@ def learn(sequence, theshold_accuracy):
                 gradients.append(gradient)
             else:
                 gradient = -1
-            print(rate_changes)
-            print(rate_changes[0][0]/sum(rate_changes[0]))
-            print(deltas1, deltas2, deltas3)
+
+
+
             print(auto_count, function_number, weight_number,  step_size, gradient, correct_ratio, all_weights, purchase_weights)
             time.sleep(1000)
 
