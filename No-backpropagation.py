@@ -46,7 +46,7 @@ def find_complements(combinations, customer):
     return all_prods
 
 
-def GetSequences(guesses_in): # This function fetches all guesses, the last x guesses are then matched and the next item is added to an index in a new list
+def GetSequences(guesses_in): # This function fetches all sequences, sequences are then matched and the next item is added to an index in a new list
     list_length = len(guesses_in)
     next_guesses = []
     time_lag = range(0, 5) #modify this to be a function input later
@@ -86,6 +86,13 @@ def log_loss(predicted, actual):
     loss_calc = abs((y*(math.log(p))) + (1-y) * math.log(1-p))
     return loss_calc
 
+"""def backwards_propagation(weight_list):
+    weight_matrix_1 = weight_list[0]
+    weight_matrix_2 = weight_list[1]
+    weight_matrix_3 = weight_list[2]
+    for x in range(len(weight_matrix_1)):
+        weight_matrix_1[x] ="""
+
 
 def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
     guesses_in = input_list
@@ -117,40 +124,43 @@ def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
             lag_multiplier = weight_lag1 * (lag+1)
             frequency_multiplier = int(guesses_in.count(str(next_number))) * weight_frequency1
             recency_multiplier = int(sub_list[-2]) * weight_recency1
+            ngram_index = (len(guesses_in)) - int(sub_list[-2]) + 1 + lag
             f1 = ((frequency_multiplier) + (recency_multiplier) + (lag_multiplier) + (length_multiplier)) \
-                             + ((weights_ngram[-next_number-1]))
+                             * ((weights_ngram[0][ngram_index]))
             probability_list[next_number-1].append(f1)
 
-            length_multiplier = len(sub_list[0]) * weight_length2
-            lag_multiplier = weight_lag2 * (lag+1)
-            frequency_multiplier = int(guesses_in.count(str(next_number))) * weight_frequency2
-            recency_multiplier = int(sub_list[-2]) * weight_recency2
-            f2 = ((frequency_multiplier) + (recency_multiplier) + (lag_multiplier) + (length_multiplier)) \
-                             + ((weights_ngram[-next_number-1]))
-            probability_list2[next_number-1].append(f1)
+            length_multiplier2 = len(sub_list[0]) * weight_length2
+            lag_multiplier2 = weight_lag2 * (lag+1)
+            frequency_multiplier2 = int(guesses_in.count(str(next_number))) * weight_frequency2
+            recency_multiplier2 = int(sub_list[-2]) * weight_recency2
+            f2 = ((frequency_multiplier2) + (recency_multiplier2) + (lag_multiplier2) + (length_multiplier2)) \
+                 * ((weights_ngram[1][ngram_index]))
+            probability_list2[next_number-1].append(f2)
 
-            length_multiplier = len(sub_list[0]) * weight_length3
-            lag_multiplier = weight_lag3 * (lag+1)
-            frequency_multiplier = int(guesses_in.count(str(next_number))) * weight_frequency3
-            recency_multiplier = int(sub_list[-2]) * weight_recency3
-            f3 = ((frequency_multiplier) + (recency_multiplier) + (lag_multiplier) + (length_multiplier)) \
-                             + ((weights_ngram[-next_number-1]))
-            probability_list3[next_number-1].append(f1)
+            length_multiplier3 = len(sub_list[0]) * weight_length3
+            lag_multiplier3 = weight_lag3 * (lag+1)
+            frequency_multiplier3 = int(guesses_in.count(str(next_number))) * weight_frequency3
+            recency_multiplier3 = int(sub_list[-2]) * weight_recency3
+            f3 = ((frequency_multiplier3) + (recency_multiplier3) + (lag_multiplier3) + (length_multiplier3)) \
+                 + ((weights_ngram[2][ngram_index]))
+            probability_list3[next_number-1].append(f3)
             counter += 1
     prob_outcomes = []
     prob_outcomes2 = []
     prob_outcomes3 = []
-    countr = 0
     if len(guesses_in) > 0 and len(processed_data) > 0:
         for h in probability_list:
+            countr = 0
             if len(h) > 1:
                 prob_outcomes.append([countr+1,sum(h[1:])])
             countr += 1
         for h in probability_list2:
+            countr = 0
             if len(h) > 1:
                 prob_outcomes2.append([countr+1,sum(h[1:])])
             countr += 1
         for h in probability_list3:
+            countr = 0
             if len(h) > 1:
                 prob_outcomes3.append([countr+1,sum(h[1:])])
             countr += 1
@@ -165,94 +175,106 @@ def Get_Probabilities(input_list, weightlist, function_number, weights_ngram):
             out6 = abs(prob_outcomes3[1][-1]) + 0.01
             sigmoid1 = 1/(1+math.e**-out1)
             sigmoid2 = 1/(1+math.e**-out2)
-
-        percept_1 = 1 - abs(out2 / (out1 + out2))
-        percept_2 = abs(out4 / ((out3 + out4)**0.52))
-        percept_2 = 1/math.log(percept_2)
-        percept_3 = 1 - abs(out6**2 / (out6**2 + out5**2))
-
-        if math.log(percept_2) < 3:
-            prediction = percept_1
-        elif percept_1 < 0.5 and math.log(percept_2) < 0.22:
-            prediction = (percept_2 ** 2 + percept_3 ** 2) /2
-        else:
-            prediction = (percept_3 ** 2 + percept_3 ** 2) / 2
+        counts = 0
+        weights_secondlayer = weightlist[3:]
+        for y in weights_secondlayer:
+            counts += 1
+            if counts == 1:
+                percept_1 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5])
+            if counts == 2:
+                percept_2 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5])
+            if counts == 3:
+                percept_3 = abs(out1*y[0] + out2*y[1] + out3*y[2] + out4*y[3] + out5*y[4] + out6*y[5])
+        percept_new1 = percept_1 / (percept_3 + percept_2 + percept_1)
+        percept_new2 = percept_2 / (percept_3 + percept_2 + percept_1)
+        percept_new3 = percept_3 / (percept_3 + percept_2 + percept_1)
+        percept_1 = percept_new1
+        percept_2 = percept_new2
+        percept_3 = percept_new3
+        #print(percept_1,percept_2,percept_3)
+        if percept_1 > 0.333:
+            prediction = ((percept_2 ** 1.4) + (percept_3 ** 1.7) + (percept_1**1.6)) / percept_1**1.5
+            prediction = 1/(prediction+1)
+        elif percept_2 > 0.333:
+            prediction = ((percept_2 ** 1.4) + (percept_3 ** 1.1) + (percept_1**1.4)) / percept_2**2.2
+            prediction = 1/(1+prediction)
+        elif percept_3 > 0.333:
+            prediction = ((percept_2 ** 1.8) + (percept_3 ** 1.3) + (percept_1**1.7)) / (0.01 + percept_3**2)
+            prediction = 1 / (1 + prediction)
         return prediction
 
-
-def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, threshold_accuracy):
+def learn(sequence, theshold_accuracy):
     learned_list = []  # this list stores the tested weights and their accuracy
-    purchase_weights = []
-    for k in range(89):
-        purchase_weights.append(1)
-    weight_length, weight_frequency, weight_lag, weight_recency, meta_w = init_length, init_frq, iinit_lag, \
-                                                                          init_recency, init_meta # starting values of weights
-    correct_ratio = 1
+    weight_length, weight_frequency, weight_lag, weight_recency, meta_w = 1,1,1,1,1
+    correct_ratio = 3000
     weight_number = 0
-    step_size = 1
-    swing_limit = 2000
+    step_size = 0.1
+    swing_limit = 5
     counts = 0
     break_count = 0
-    no_improvement_limit = 5000000
-    iteration_limit = 5000000
-    weight_limit = 1000000000
+    no_improvement_limit = 50
+    iteration_limit = 50
+    weight_limit = 1000000
+    result_matches = 500
     accuracy_list = [1, 1]
     gradients = [1, 1]
-    step_sizes = [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
     loss_list = []
     function_number = 0
-    all_weights = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]]
+    trial_weights = copy.deepcopy(all_weights)
+    trial_purchase = copy.deepcopy(purchase_weights)
     while abs(weight_length) + abs(weight_lag) + abs(weight_frequency) + abs(weight_recency) + abs(meta_w) \
             < weight_limit \
             and counts < iteration_limit\
             and break_count < no_improvement_limit\
-            :
+            and result_matches > theshold_accuracy\
+            and result_matches > 0.04:
         auto_count = 0
-        switch = 0
-        last_prob = 1
-        weight_adder = 0
-        weight_list = all_weights[function_number]
+        last_prob = 100
         while 0 <= auto_count <= swing_limit and correct_ratio > 0.05:
             counts += 1
             odds_improved = 0
             if counts > iteration_limit or correct_ratio < 0.03:
                 break
-            if weight_number < 5:
+            if function_number < 6:
+                boosting = 0
                 weight = all_weights[function_number][weight_number]
-                trial_weights = copy.deepcopy(all_weights)
-                trial_weights[function_number][weight_number] = trial_weights[function_number][weight_number]
-            step_size = step_sizes[function_number][weight_number]
+                step_size = step_sizes[function_number][weight_number]
+                trial_weights[function_number][weight_number] = weight + step_size
+            else:
+                boosting = 1
+                weight = purchase_weights[function_number-5][weight_number]
+                step_size = purchase_step_sizes[function_number-5][weight_number-5]
+                trial_purchase[function_number-5][weight_number] = weight + step_size
 
             cnt_loop = 0
-            for n in range(20, len(sequence) - 1): # Compare the forecast based on guesses 0:n to the actual outcome
-                if weight_number == 0:
+            for n in range(30, len(sequence) - 1): # Compare the forecast based on guesses 0:n to the actual outcome
+                if function_number < 6:
                     predicted_number = Get_Probabilities(sequence[0:n], trial_weights, function_number, purchase_weights)
+                else:
+                    predicted_number = Get_Probabilities(sequence[0:n], trial_weights, function_number, trial_purchase)
 
                 if predicted_number is not None:  # Checks if simulation predicted the next value
                     loss_list.append(log_loss(predicted_number, sequence[n+1]))
                     correct_ratio = sum(loss_list) / len(loss_list)
-                    if log_loss(int(predicted_number), sequence[n+1]) > correct_ratio and weight_number == 5:
-                        purchase_weights[cnt_loop] = abs(purchase_weights[cnt_loop]) + step_size
-                    elif log_loss(int(predicted_number), sequence[n+1]) < correct_ratio and weight_number == 5:
-                        purchase_weights[cnt_loop] = abs(purchase_weights[cnt_loop]) - step_size
-                cnt_loop += 1
             accuracy_list.append(correct_ratio)
             if len(gradients) > 1:
                 gradient = (accuracy_list[-2] - accuracy_list[-1]) / accuracy_list[-1]
                 gradients.append(gradient)
             else:
                 gradient = -1
-            print(auto_count, function_number, weight_number, step_size, gradient, correct_ratio, all_weights, purchase_weights)
+            #print(auto_count, function_number, weight_number,  step_size, gradient, correct_ratio, all_weights, purchase_weights)
             if last_prob > correct_ratio:
                 last_prob = correct_ratio
                 break_count = 0
                 odds_improved = 1
                 if gradients[-1] < gradients[-2]:
-                    step_sizes[function_number][weight_number] = step_sizes[function_number][weight_number]
-                    auto_count += 0.01
-                else:
-                    auto_count -= 0.2
-            print(correct_ratio, last_prob)
+                    if function_number < 6:
+                        step_sizes[function_number][weight_number] = step_sizes[function_number][weight_number] * (gradients[-1]/(gradients[-2]+0.0000000000000001))
+                    else:
+                        purchase_step_sizes[function_number-5][weight_number] = purchase_step_sizes[function_number-5][weight_number] * (gradients[-2]+0.0000000000000001)
+                    if gradient < 0.0000001: #min improvement rate
+                        auto_count += 1
+           # print(correct_ratio, last_prob)
             if correct_ratio > last_prob or 0 > gradients[-1]:
                 break_count += 1
                 odds_improved = 0
@@ -260,28 +282,36 @@ def learn(sequence, init_length, init_frq, iinit_lag, init_recency, init_meta, t
                 break
             else:
                 auto_count += 1
-            if odds_improved == 1 and weight_number != 5:
+            if odds_improved == 1 and function_number < 6:
                 all_weights[function_number][weight_number] = weight + step_size
+                trial_weights = copy.deepcopy(all_weights)
+            if odds_improved == 1 and function_number > 5:
+                purchase_weights[function_number-5][weight_number] = weight + step_size
+                trial_purchase= copy.deepcopy(purchase_weights)
             #  find a cleaner solution to the below
-        if auto_count >= swing_limit:
-            swing_limit += 1
-            step_sizes[function_number][weight_number] = step_sizes[function_number][weight_number] * -1.1
+        if auto_count >= swing_limit and odds_improved == 0:
+            swing_limit += 0.1
+            if function_number < 6:
+                step_sizes[function_number][weight_number] = step_sizes[function_number][weight_number] * -1.1
+            elif function_number > 6:
+                purchase_step_sizes[function_number-5][weight_number] = purchase_step_sizes[function_number-5][weight_number] * -1.1
             #print("Step size increased to " + str(step_size))
         weight_number += 1
-        if weight_number > 5:
+        if weight_number > 4 and boosting == 0:
             weight_number = 0
             function_number += 1
-        if function_number > 2:
+        if weight_number > len(sequence)-1 and boosting == 1:
+            weight_number = 0
+            function_number += 1
+        if function_number > 7:
             function_number = 0
 
-        #print("current correct guesses in training (overfitted):", str(correct_ratio), last_prob, "weights: ",
-              #str(weight_frequency), weight_lag, weight_length, weight_recency, meta_w)
-    return weight_length, weight_lag, weight_frequency, weight_recency, purchase_weights, meta_w
+    return all_weights, purchase_weights
 
 
 total_right, total_wrong = 1, 1
 one_count, two_count = 0, 0
-training_lim = 40
+training_lim = 60
 testing_lim = 88
 dyn_length, dyn_frq, dyn_lag, dyn_recency, dyn_meta = 1, 1, 1, 1, 1
 total_wrong = 0
@@ -289,6 +319,17 @@ total_right = 1
 losses_testing = []
 rows = []
 total_thresholds = []
+step_sizes = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+              [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+              [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
+all_weights = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1],
+               [1, 1, 1, 1, 1, 1]]
+purchase_weights = [[], [], []]
+purchase_step_sizes = [[], [], []]
+for n in range(3):
+    for k in range(900):
+        purchase_weights[n].append(1)
+        purchase_step_sizes[n].append(1)
 with open("bigger_list.csv", 'r') as file:
     csvreader = csv.reader(file)
     header = next(csvreader)
@@ -296,31 +337,42 @@ with open("bigger_list.csv", 'r') as file:
         rows.append(row)
 
 customer_count = 0
+
 for row in rows:
+    step_sizes = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+                  [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+                  [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]]
+    all_weights = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1],
+                   [1, 1, 1, 1, 1, 1]]
+    print(row)
     found_complements = []
     weight_complements= []
-    if len(row) > 1 and row[2]:
+    if len(row) > 1 and row[2] and int(row[0]) > 38:
         print("Customer: ", row[0], "Product number: ", row[1])
-        customer = int(row[0])
-        """
-        combs = find_combos(rows, customer)
+        customer = row[0]
+        product = row[1]
+
+        """ combs = find_combos(rows, customer)
         produce = find_complements(combs, customer)
+        print(produce)
         for pro in produce:
             if str(row[1]) == str(pro[0]):
                 found_complements.append([pro[-2], pro[-1]])
         for com in found_complements:
-            index = (int(customer) * 500) + (com[0]*2) - 1
+            index = (int(customer) * 500) + ((int(com[0]*2)) - 1)
             weight_complements.append([rows[index][2:], pro[-1]])
         print(weight_complements)
         print("found")"""
 
         row = row[2:]
-        guesses, live_list = [], [],
+        timeseries, live_list = [], [],
         probability_list = []
         losses_product = []
         training_data = row[0:training_lim]
         testing_data = row[training_lim:testing_lim]
-        if (row.count("2") / (row.count("2") + row.count("1"))) > 0.1:
+        if (row[0:30].count("2") / (row[0:30].count("2") + row[0:30].count("1"))) > 0.05\
+                and (row[training_lim:testing_lim].count("2") / (row[training_lim:testing_lim].count("2") +
+                                                                 row[training_lim:testing_lim].count("1"))) > 0.05:
             print("Proportion of purchases in training data:",
                   training_data.count("1") / (training_data.count("2") + training_data.count("1")))
             print("Proportion of purchases in testing data:",
@@ -328,38 +380,45 @@ for row in rows:
             tester = []
             for num in training_data:
                 num = int(num)
-                guesses.extend(str(num))
+                timeseries.extend(str(num))
             for num in testing_data:
                 num = int(num)
                 tester.extend(str(num))
-                guesses.extend(str(num))
-
-            threshold_accuracy = log_loss(max(guesses.count("1")/(guesses.count("1") + guesses.count("2")),
-                                               guesses.count("2")/(guesses.count("1") + guesses.count("2"))), 2)
+                timeseries.extend(str(num))
+            p = testing_data.count("1") / (testing_data.count("2") + testing_data.count("1"))
+            threshold_accuracy = -1 * ((p*(math.log(p))) +((1-p)*math.log(1-p)))
+            """threshold_accuracy = log_loss(max(timeseries.count("1") / (timeseries.count("1") + timeseries.count("2")),
+                                              timeseries.count("2") / (timeseries.count("1") + timeseries.count("2"))), 2)"""
             total_thresholds.append(threshold_accuracy)
 
             correct_guesses, incorrect_guesses, newcount = 0, 0, 0
             simul_right = 0.001
             simul_wrong = 0
+            learned = learn(timeseries[0:training_lim], threshold_accuracy)
             for h in range(training_lim, testing_lim-1):
-                learned = learn(guesses[0:h], dyn_length, dyn_lag, dyn_frq, dyn_recency, dyn_meta, threshold_accuracy)
-                predicted_number = Get_Probabilities(guesses[0:h], learned[0], learned[1], learned[2],
-                                                     learned[3], learned[4], learned[5])
-                dyn_length, dyn_frq, dyn_lag, dyn_recency, dyn_meta = learned[0], learned[1], learned[2], \
-                                                                      learned[3], learned[5]
-
+                predicted_number = Get_Probabilities(timeseries[0:h], learned[0], 0, learned[1])
                 if predicted_number is not None:  # Checks if simulation predicted the next value
-                    print(predicted_number, int(guesses[h+1])-1, h)
-                    testing_loss = log_loss(predicted_number, int(guesses[h+1]))
+                    testing_loss = log_loss(predicted_number, int(timeseries[h + 1]))
                     losses_testing.append(testing_loss)
                     losses_product.append(testing_loss)
-                    if int(guesses[h + 1]) == 1:
+                    print(sum(losses_testing)/len(losses_testing),predicted_number, int(timeseries[h + 1]) - 1, h)
+                    if int(timeseries[h + 1]) == 1:
                         one_count += 1
                     else:
                         two_count += 1
                 loss_product = sum(losses_product)/len(losses_product)
                 loss_testing = sum(losses_testing)/len(losses_testing)
+            final_prediction = Get_Probabilities(timeseries[0:89], learned[0], 0, learned[1])
             print(loss_product, "log_loss for weeks: ", training_lim, " to ", testing_lim)
             print(loss_testing, "log_loss correctly for ", one_count+two_count,
                   " predictions in testing so far, baseline ratio:", sum(total_thresholds)/len(total_thresholds))
+            with open('final_predictions4.csv', 'a') as file2:
+                writer = csv.writer(file2)
+                writer.writerow([customer, product, final_prediction, threshold_accuracy, sum(losses_product)/len(losses_product)])
+                print(customer, product, final_prediction, threshold_accuracy, testing_loss)
+        else:
+            with open('final_predictions4.csv', 'a') as file2:
+                writer = csv.writer(file2)
+                writer.writerow([customer, product, 0.02, 0, 0])
+
 
